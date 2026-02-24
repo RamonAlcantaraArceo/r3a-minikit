@@ -15,10 +15,8 @@ python = "^3.10"
 requires = ["poetry-core>=1.8"]
 build-backend = "poetry.core.masonry.api"
 
-[dependency-groups]
-dev = [
-    "pytest (>=9.0.2,<10.0.0)",
-    "pytest-cov (>=7.0.0,<8.0.0)",
-    "ruff (>=0.15.2,<0.16.0)",
-    "mypy (>=1.19.1,<2.0.0)"
-]
+[tool.poetry.group.dev.dependencies]
+pytest = ">=9.0.2,<10.0.0"
+pytest-cov = ">=7.0.0,<8.0.0"
+ruff = ">=0.15.2,<0.16.0"
+mypy = ">=1.19.1,<2.0.0"
