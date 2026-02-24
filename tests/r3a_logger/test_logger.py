@@ -1,4 +1,4 @@
-"""Unit tests for logger.py (BrowserLauncherLogger and helpers)."""
+"""Unit tests for logger.py (R3ALogger and helpers)."""
 
 import logging
 import os
