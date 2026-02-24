@@ -1,17 +1,24 @@
-[project]
+[tool.poetry]
 name = "r3a-minikit"
 version = "0.0.1"
 description = "A collection of utilities and mini modules I often end up using over and over"
-authors = [
-    {name = "Ramon Alcantara Arceo",email = "ramalc.ms@outlook.com"}
-]
-license = {file = "LICENSE"}
+authors = ["Ramon Alcantara Arceo <ramalc.ms@outlook.com>"]
+license = "MIT"
 readme = "README.md"
-requires-python = ">=3.14"
-dependencies = [
-]
 
+packages = [{ include = "r3a_logger", from = "src" }]
+
+[tool.poetry.dependencies]
+python = "^3.10"
 
 [build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
+requires = ["poetry-core>=1.8"]
 build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+dev = [
+    "pytest (>=9.0.2,<10.0.0)",
+    "pytest-cov (>=7.0.0,<8.0.0)",
+    "ruff (>=0.15.2,<0.16.0)",
+    "mypy (>=1.19.1,<2.0.0)"
+]
