@@ -1,0 +1,17 @@
+[project]
+name = "r3a-minikit"
+version = "0.0.1"
+description = "A collection of utilities and mini modules I often end up using over and over"
+authors = [
+    {name = "Ramon Alcantara Arceo",email = "ramalc.ms@outlook.com"}
+]
+license = {file = "LICENSE"}
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
