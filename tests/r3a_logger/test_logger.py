@@ -254,7 +254,7 @@ def test_get_current_logger_default_behavior(tmp_path, monkeypatch):
     from r3a_logger import logger as logger_mod
 
     # Patch Path.home to tmp_path for isolation
-    monkeypatch.setattr("pathlib.Path.home", lambda: tmp_path)
+    monkeypatch.setattr("r3a_logger.logger.Path.home", lambda: tmp_path)
 
     # Reset global instance
     logger_mod._instance = None

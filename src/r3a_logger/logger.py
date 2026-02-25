@@ -180,6 +180,8 @@ def setup_logging(
         log_dir: Directory for log files
         log_level: Logging level
         console_logging: Whether to enable console logging (default: False)
+        logger_name: Name for the logger instance (default: "r3a-minikit")
+        log_file_name: Optional log file name. If None, uses logger_name + ".log"
         file_format: Tuple of (format_string, datefmt) for file output
         console_format: Tuple of (format_string, datefmt) for console output
 
