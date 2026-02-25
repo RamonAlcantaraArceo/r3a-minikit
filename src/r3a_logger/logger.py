@@ -205,14 +205,23 @@ def initialize_logging(
     log_dir: Path,
     log_level: str = "INFO",
     console_logging: bool = False,
+    logger_name: str = "r3a-minikit",
+    log_file_name: Optional[str] = None,
     file_format: Tuple[str, str] = DEFAULT_FILE_FORMAT,
     console_format: Tuple[str, str] = DEFAULT_CONSOLE_FORMAT,
 ) -> None:
     """Initialize logging with specified level.
+
+    Note: The initialization message is always logged at INFO level regardless
+    of the specified log_level to ensure it's visible during setup. The logger
+    is then switched to the desired level after initialization.
+
     Args:
         log_dir: Directory to store log files
         log_level: Logging level (default: INFO)
         console_logging: Enable console logging (default False)
+        logger_name: Name for the logger instance (default: "r3a-minikit")
+        log_file_name: Optional log file name. If None, uses logger_name + ".log"
         file_format: Tuple of (format_string, datefmt) for file output
         console_format: Tuple of (format_string, datefmt) for console output
     """
@@ -222,6 +231,8 @@ def initialize_logging(
         log_dir=log_dir,
         log_level="INFO",
         console_logging=console_logging,
+        logger_name=logger_name,
+        log_file_name=log_file_name,
         file_format=file_format,
         console_format=console_format,
     )

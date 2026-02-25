@@ -327,3 +327,63 @@ def test_get_current_logger_preserves_existing_instance(tmp_path):
     # Verify calling with different log_dir doesn't change the instance
     logger2 = get_current_logger(log_dir=tmp_path / "different")
     assert logger is logger2
+
+
+def test_initialize_logging_with_custom_logger_name_and_file(tmp_path):
+    """Test initialize_logging with custom logger_name and log_file_name."""
+    from r3a_logger import logger as logger_mod
+
+    # Reset global instance
+    logger_mod._instance = None
+
+    log_dir = tmp_path / "custom_logger_test"
+
+    # Initialize logging with custom logger name and file name
+    logger_mod.initialize_logging(
+        log_dir=log_dir,
+        log_level="INFO",
+        console_logging=True,
+        logger_name="custom-logger",
+        log_file_name="my-app.log",
+    )
+
+    # Verify log file was created with custom name
+    log_file = log_dir / "my-app.log"
+    assert log_file.exists()
+
+    # Verify log content
+    with open(log_file, encoding="utf-8") as f:
+        content = f.read()
+        assert "Logging initialized at INFO level" in content
+
+    # Verify logger name is correct
+    logger = logger_mod.get_current_logger()
+    assert logger is not None
+    assert logger.name == "custom-logger"
+
+
+def test_initialize_logging_with_default_log_file_name(tmp_path):
+    """Test initialize_logging uses logger_name.log when log_file_name is None."""
+    from r3a_logger import logger as logger_mod
+
+    # Reset global instance
+    logger_mod._instance = None
+
+    log_dir = tmp_path / "default_file_test"
+
+    # Initialize logging with custom logger name but default file name
+    logger_mod.initialize_logging(
+        log_dir=log_dir,
+        log_level="INFO",
+        logger_name="my-service",
+        # log_file_name=None (default)
+    )
+
+    # Verify log file was created with logger_name + ".log"
+    log_file = log_dir / "my-service.log"
+    assert log_file.exists()
+
+    # Verify log content
+    with open(log_file, encoding="utf-8") as f:
+        content = f.read()
+        assert "Logging initialized at INFO level" in content
