@@ -7,7 +7,50 @@ on:
     branches: [main]
 
 jobs:
-  test-and-lint:
+  lint:
+    name: Lint (Python 3.14)
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python 3.14
+      id: setup-python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.14"
+        
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: '2.2.1'
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+        installer-parallel: true
+        
+    - name: Load cached venv
+      id: cached-poetry-dependencies
+      uses: actions/cache@v4
+      with:
+        path: .venv
+        key: venv-lint-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+        
+    - name: Install dependencies
+      if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+      run: poetry install --with dev
+      
+    - name: Run Ruff Format (check only)
+      run: poetry run ruff format --check
+      
+    - name: Run Ruff Check
+      run: poetry run ruff check src/ tests/
+      
+    - name: Run Mypy
+      run: poetry run mypy src/ tests/
+
+  test:
+    name: Test (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -17,7 +60,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Set up Python
+    - name: Set up Python ${{ matrix.python-version }}
       id: setup-python
       uses: actions/setup-python@v5
       with:
@@ -36,20 +79,11 @@ jobs:
       uses: actions/cache@v4
       with:
         path: .venv
-        key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
+        key: venv-test-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
         
     - name: Install dependencies
       if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
       run: poetry install --with dev
-      
-    - name: Run Ruff Format (check only)
-      run: poetry run ruff format --check
-      
-    - name: Run Ruff Check
-      run: poetry run ruff check src/ tests/
-      
-    - name: Run Mypy
-      run: poetry run mypy src/ tests/
       
     - name: Run Tests with Coverage
       run: poetry run pytest --cov=src --cov-report=xml --cov-report=term-missing --junitxml=junit.xml -o junit_family=legacy
@@ -61,19 +95,19 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
         files: ./junit.xml
         flags: unittests,python-${{ matrix.python-version }}
-        name: codecov-python-${{ matrix.python-version }}
+        name: codecov-tests-python-${{ matrix.python-version }}
         report_type: test_results
         verbose: true
         fail_ci_if_error: false
       
     - name: Upload coverage to Codecov
-      if: ${{ !cancelled() }}
+      if: ${{ !cancelled() && matrix.python-version == '3.14' }}
       uses: codecov/codecov-action@v5
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         files: ./coverage.xml
-        flags: unittests,python-${{ matrix.python-version }}
-        name: codecov-python-${{ matrix.python-version }}
+        flags: unittests,coverage
+        name: codecov-coverage-python-${{ matrix.python-version }}
         report_type: coverage
         verbose: true
         fail_ci_if_error: false
