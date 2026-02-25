@@ -228,21 +228,21 @@ def test_get_current_logger_with_custom_log_dir(tmp_path):
     logger_mod._instance = None
 
     custom_log_dir = tmp_path / "custom_logs"
-    
+
     # Call get_current_logger with custom directory
     logger = get_current_logger(log_dir=custom_log_dir)
-    
+
     # Verify logger was created
     assert logger is not None
     assert isinstance(logger, logging.Logger)
-    
+
     # Log a message
     logger.info("Test message from custom directory")
-    
+
     # Verify log file was created in custom directory
     log_file = custom_log_dir / "r3a-minikit.log"
     assert log_file.exists()
-    
+
     # Verify log content
     with open(log_file, encoding="utf-8") as f:
         content = f.read()
@@ -255,25 +255,25 @@ def test_get_current_logger_default_behavior(tmp_path, monkeypatch):
 
     # Patch Path.home to tmp_path for isolation
     monkeypatch.setattr("pathlib.Path.home", lambda: tmp_path)
-    
+
     # Reset global instance
     logger_mod._instance = None
-    
+
     # Call get_current_logger without parameters
     logger = get_current_logger()
-    
+
     # Verify logger was created
     assert logger is not None
     assert isinstance(logger, logging.Logger)
-    
+
     # Log a message
     logger.info("Test message from default directory")
-    
+
     # Verify log file was created in default directory
     default_log_dir = tmp_path / ".r3a-minikit" / "logs"
     log_file = default_log_dir / "r3a-minikit.log"
     assert log_file.exists()
-    
+
     # Verify log content
     with open(log_file, encoding="utf-8") as f:
         content = f.read()
@@ -286,18 +286,18 @@ def test_get_current_logger_singleton_behavior(tmp_path):
 
     # Reset global instance
     logger_mod._instance = None
-    
+
     custom_log_dir = tmp_path / "singleton_test"
-    
+
     # Get logger first time
     logger1 = get_current_logger(log_dir=custom_log_dir)
-    
+
     # Get logger second time (should be same instance, even with different log_dir)
     logger2 = get_current_logger(log_dir=tmp_path / "different_dir")
-    
+
     # They should be the same logger instance (singleton behavior)
     assert logger1 is logger2
-    
+
     # Also test calling without log_dir after initialization
     logger3 = get_current_logger()
     assert logger1 is logger3
@@ -309,23 +309,21 @@ def test_get_current_logger_preserves_existing_instance(tmp_path):
 
     # Reset global instance
     logger_mod._instance = None
-    
+
     # Initialize logging first with specific settings
     log_dir = tmp_path / "preserve_test"
     logger_mod.initialize_logging(
-        log_dir=log_dir,
-        log_level="DEBUG",
-        console_logging=True
+        log_dir=log_dir, log_level="DEBUG", console_logging=True
     )
-    
+
     # Get the current logger after initialization
     logger = get_current_logger()
-    
+
     # Verify it's the same instance that was created by initialize_logging
     assert logger is not None
     assert isinstance(logger, logging.Logger)
     assert logger.level == logging.DEBUG  # Verify it preserved the DEBUG level
-    
+
     # Verify calling with different log_dir doesn't change the instance
     logger2 = get_current_logger(log_dir=tmp_path / "different")
     assert logger is logger2
