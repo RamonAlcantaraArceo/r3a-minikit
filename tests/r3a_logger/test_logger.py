@@ -3,7 +3,6 @@
 import logging
 import logging.handlers
 import os
-from pathlib import Path
 
 from r3a_logger.logger import (
     R3ALogger,
@@ -32,14 +31,14 @@ def test_logger_creates_log_file_and_console(tmp_path):
 
 
 def test_initialize_logging_debug(tmp_path, monkeypatch):
-    # Patch Path.home to tmp_path for isolation
-    monkeypatch.setattr(Path, "home", lambda: tmp_path)
     from r3a_logger import logger as logger_mod
 
     logger_mod._instance = None
-    # Call initialize_logging with log_level='DEBUG'
-    logger_mod.initialize_logging(log_level="DEBUG", console_logging=True)
     log_dir = tmp_path / ".r3a-minikit" / "logs"
+    # Call initialize_logging with log_level='DEBUG'
+    logger_mod.initialize_logging(
+        log_dir=log_dir, log_level="DEBUG", console_logging=True
+    )
     log_file = log_dir / "r3a-minikit.log"
     assert log_file.exists()
     with open(log_file, encoding="utf-8") as f:
@@ -97,13 +96,13 @@ def test_get_logger_and_setup_logging(tmp_path):
     assert logger3 is get_logger(log_dir, log_level="DEBUG", console_logging=False)
 
 
-def test_get_current_logger_returns_logger(monkeypatch, tmp_path):
-    # Patch Path.home to tmp_path for isolation
-    monkeypatch.setattr(Path, "home", lambda: tmp_path)
+def test_get_current_logger_returns_logger(tmp_path):
     # Remove global _instance if set
     from r3a_logger import logger as logger_mod
 
     logger_mod._instance = None
+    log_dir = tmp_path / ".r3a-minikit" / "logs"
+    logger_mod.initialize_logging(log_dir=log_dir)
     log = get_current_logger()
     assert isinstance(log, logging.Logger)
 
@@ -166,8 +165,6 @@ def test_custom_format_tuples(tmp_path):
 
 def test_helper_functions_with_custom_formats(tmp_path, monkeypatch):
     """Test that helper functions work with custom format tuples."""
-    # Patch Path.home to tmp_path for isolation
-    monkeypatch.setattr(Path, "home", lambda: tmp_path)
     from r3a_logger import logger as logger_mod
 
     logger_mod._instance = None
@@ -199,7 +196,9 @@ def test_helper_functions_with_custom_formats(tmp_path, monkeypatch):
 
     # Test initialize_logging with custom formats
     logger_mod._instance = None
+    init_log_dir = tmp_path / ".r3a-minikit" / "logs"
     logger_mod.initialize_logging(
+        log_dir=init_log_dir,
         log_level="INFO",
         console_logging=True,
         file_format=custom_file_format,
@@ -210,14 +209,123 @@ def test_helper_functions_with_custom_formats(tmp_path, monkeypatch):
     logger3.info("Test from initialize_logging")
 
     # Verify all logs use custom format
-    log_file = tmp_path / ".r3a-minikit" / "logs" / "r3a-minikit.log"
+    log_file = init_log_dir / "r3a-minikit.log"
     assert log_file.exists()
     with open(log_file, encoding="utf-8") as f:
         content = f.read()
         # Should use custom format (level:message, no timestamps due to date format)
-        assert (
-            "INFO:Test from get_logger" in content
-            or "INFO:Logging initialized" in content
-        )
+        assert "INFO:Logging initialized" in content
+        assert "INFO:Test from initialize_logging" in content
         # Should NOT contain default format patterns
         assert " | " not in content
+
+
+def test_get_current_logger_with_custom_log_dir(tmp_path):
+    """Test get_current_logger with custom log_dir parameter."""
+    from r3a_logger import logger as logger_mod
+
+    # Reset global instance
+    logger_mod._instance = None
+
+    custom_log_dir = tmp_path / "custom_logs"
+    
+    # Call get_current_logger with custom directory
+    logger = get_current_logger(log_dir=custom_log_dir)
+    
+    # Verify logger was created
+    assert logger is not None
+    assert isinstance(logger, logging.Logger)
+    
+    # Log a message
+    logger.info("Test message from custom directory")
+    
+    # Verify log file was created in custom directory
+    log_file = custom_log_dir / "r3a-minikit.log"
+    assert log_file.exists()
+    
+    # Verify log content
+    with open(log_file, encoding="utf-8") as f:
+        content = f.read()
+        assert "Test message from custom directory" in content
+
+
+def test_get_current_logger_default_behavior(tmp_path, monkeypatch):
+    """Test get_current_logger default behavior (uses ~/.r3a-minikit/logs)."""
+    from r3a_logger import logger as logger_mod
+
+    # Patch Path.home to tmp_path for isolation
+    monkeypatch.setattr("pathlib.Path.home", lambda: tmp_path)
+    
+    # Reset global instance
+    logger_mod._instance = None
+    
+    # Call get_current_logger without parameters
+    logger = get_current_logger()
+    
+    # Verify logger was created
+    assert logger is not None
+    assert isinstance(logger, logging.Logger)
+    
+    # Log a message
+    logger.info("Test message from default directory")
+    
+    # Verify log file was created in default directory
+    default_log_dir = tmp_path / ".r3a-minikit" / "logs"
+    log_file = default_log_dir / "r3a-minikit.log"
+    assert log_file.exists()
+    
+    # Verify log content
+    with open(log_file, encoding="utf-8") as f:
+        content = f.read()
+        assert "Test message from default directory" in content
+
+
+def test_get_current_logger_singleton_behavior(tmp_path):
+    """Test that get_current_logger returns the same instance."""
+    from r3a_logger import logger as logger_mod
+
+    # Reset global instance
+    logger_mod._instance = None
+    
+    custom_log_dir = tmp_path / "singleton_test"
+    
+    # Get logger first time
+    logger1 = get_current_logger(log_dir=custom_log_dir)
+    
+    # Get logger second time (should be same instance, even with different log_dir)
+    logger2 = get_current_logger(log_dir=tmp_path / "different_dir")
+    
+    # They should be the same logger instance (singleton behavior)
+    assert logger1 is logger2
+    
+    # Also test calling without log_dir after initialization
+    logger3 = get_current_logger()
+    assert logger1 is logger3
+
+
+def test_get_current_logger_preserves_existing_instance(tmp_path):
+    """Test that get_current_logger preserves existing logger instance."""
+    from r3a_logger import logger as logger_mod
+
+    # Reset global instance
+    logger_mod._instance = None
+    
+    # Initialize logging first with specific settings
+    log_dir = tmp_path / "preserve_test"
+    logger_mod.initialize_logging(
+        log_dir=log_dir,
+        log_level="DEBUG",
+        console_logging=True
+    )
+    
+    # Get the current logger after initialization
+    logger = get_current_logger()
+    
+    # Verify it's the same instance that was created by initialize_logging
+    assert logger is not None
+    assert isinstance(logger, logging.Logger)
+    assert logger.level == logging.DEBUG  # Verify it preserved the DEBUG level
+    
+    # Verify calling with different log_dir doesn't change the instance
+    logger2 = get_current_logger(log_dir=tmp_path / "different")
+    assert logger is logger2

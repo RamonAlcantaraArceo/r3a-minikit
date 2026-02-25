@@ -202,6 +202,7 @@ def setup_logging(
 
 
 def initialize_logging(
+    log_dir: Path,
     log_level: str = "INFO",
     console_logging: bool = False,
     file_format: Tuple[str, str] = DEFAULT_FILE_FORMAT,
@@ -209,12 +210,12 @@ def initialize_logging(
 ) -> None:
     """Initialize logging with specified level.
     Args:
+        log_dir: Directory to store log files
         log_level: Logging level (default: INFO)
         console_logging: Enable console logging (default False)
         file_format: Tuple of (format_string, datefmt) for file output
         console_format: Tuple of (format_string, datefmt) for console output
     """
-    log_dir = Path.home() / ".r3a-minikit" / "logs"
 
     # Start at INFO level to ensure initialization message is always visible
     logger = setup_logging(
@@ -235,8 +236,18 @@ def initialize_logging(
             handler.setLevel(level)
 
 
-def get_current_logger() -> Optional[logging.Logger]:
-    """Get the current logger instance."""
+def get_current_logger(
+    log_dir: Optional[Path] = None,
+) -> Optional[logging.Logger]:
+    """Get the current logger instance.
+
+    Args:
+        log_dir: Directory for log files. Defaults to ~/.r3a-minikit/logs
+
+    Returns:
+        The current logger instance
+    """
     if _instance is None:
-        initialize_logging()
+        default_log_dir = log_dir or (Path.home() / ".r3a-minikit" / "logs")
+        initialize_logging(log_dir=default_log_dir)
     return _instance.get_logger() if _instance else None
