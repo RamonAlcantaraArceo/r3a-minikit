@@ -1,4 +1,4 @@
-# Copilot Instructions for r3a-minikit
+# ** Copilot Instructions for r3a-minikit**
 
 ## Project Overview
 
@@ -20,26 +20,31 @@ r3a-minikit is a Python library providing a collection of reusable utilities and
 └── poetry.lock
 ```
 
-New packages go under `src/` and their tests under `tests/` mirroring the same directory structure. Each package must be registered in `pyproject.toml` under `packages` (e.g., `{ include = "package_name", from = "src" }`).
+New packages go under `src/` and their tests under `tests/`, mirroring the same directory structure.  
+Each package must be registered in `pyproject.toml` under `packages` (e.g., `{ include = "package_name", from = "src" }`).
+
+---
 
 ## Build & Development
 
-- **Python**: ≥ 3.10
+- **Python**: ≥ 3.14  
 - **Package manager**: Poetry (≥ 2)
-- **Install dependencies** (always run first):
+- Install dependencies:
 
-  ```bash
-  poetry install --with dev
-  ```
+```bash
+poetry install --with dev
+```
+
+---
 
 ## Linting, Formatting & Type Checking
 
 Run these commands in order. All must pass before committing:
 
 ```bash
-poetry run ruff format --check   # Check formatting
-poetry run ruff check src/ tests/ # Lint source and tests
-poetry run mypy src/ tests/       # Type-check source and tests
+poetry run ruff format --check
+poetry run ruff check src/ tests/
+poetry run mypy src/ tests/
 ```
 
 To auto-fix formatting issues:
@@ -48,13 +53,32 @@ To auto-fix formatting issues:
 poetry run ruff format
 ```
 
+After generating or modifying code, always run the formatter and linter.
+
+---
+
 ## Testing
+
+Tests use **pytest** (not unittest).  
+Place test files in `tests/<package_name>/` using the naming convention:
+
+```
+test_*.py
+```
+
+Run the full suite with:
 
 ```bash
 poetry run pytest --cov=src --cov-report=term-missing
 ```
 
-Tests use `pytest`. Place test files in `tests/<package_name>/` matching the source layout.
+**Testing workflow preferences:**
+
+- Start with the simplest failing test case.
+- Keep tests small, focused, and colocated with their corresponding module.
+- Use pytest fixtures and idioms rather than unittest-style classes.
+
+---
 
 ## CI Pipeline
 
@@ -65,11 +89,17 @@ The GitHub Actions workflow (`.github/workflows/ci.yml`) runs on every push and 
 3. `poetry run mypy src/ tests/`
 4. `poetry run pytest --cov=src --cov-report=xml --cov-report=term-missing`
 
-Always replicate this sequence locally before pushing.
+Replicate this sequence locally before pushing.
+
+---
 
 ## Coding Conventions
 
-- Use type hints on all function signatures.
-- Follow docstring style used in the codebase (Google-style Args/Returns).
+- Use **type hints everywhere**.
+- Use **Google-style docstrings** for all public functions and classes.
+- Prefer **dataclasses** when appropriate.
+- Use **f-strings** instead of `str.format()`.
 - Keep `__init__.py` files minimal.
 - Use `pathlib.Path` instead of `os.path` for filesystem operations.
+- Prefer pytest idioms over unittest patterns.
+
