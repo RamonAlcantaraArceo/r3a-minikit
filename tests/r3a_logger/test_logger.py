@@ -24,7 +24,7 @@ def test_logger_creates_log_file_and_console(tmp_path):
     logger.error("error message")
     log_file = log_dir / "r3a-minikit.log"
     assert log_file.exists()
-    with open(log_file) as f:
+    with open(log_file, encoding="utf-8") as f:
         content = f.read()
         assert "debug message" in content
         assert "info message" in content
@@ -43,7 +43,7 @@ def test_initialize_logging_debug(tmp_path, monkeypatch):
     log_dir = tmp_path / ".r3a-minikit" / "logs"
     log_file = log_dir / "r3a-minikit.log"
     assert log_file.exists()
-    with open(log_file) as f:
+    with open(log_file, encoding="utf-8") as f:
         content = f.read()
         assert "Logging initialized at DEBUG level" in content
 
@@ -57,7 +57,7 @@ def test_logger_respects_log_level(tmp_path):
     logger.warning("should appear")
     logger.error("should appear")
     log_file = log_dir / "r3a-minikit.log"
-    with open(log_file) as f:
+    with open(log_file, encoding="utf-8") as f:
         content = f.read()
         assert "should not appear" not in content
         assert "should appear" in content
@@ -70,7 +70,7 @@ def test_set_level_changes_log_level(tmp_path):
     logger_obj.set_level("DEBUG")
     logger.debug("debug now visible")
     log_file = log_dir / "r3a-minikit.log"
-    with open(log_file) as f:
+    with open(log_file, encoding="utf-8") as f:
         content = f.read()
         assert "debug now visible" in content
 
@@ -133,7 +133,7 @@ def test_custom_format_tuples(tmp_path):
     # Check file format
     log_file = log_dir / "r3a-minikit.log"
     assert log_file.exists()
-    with open(log_file) as f:
+    with open(log_file, encoding="utf-8") as f:
         content = f.read()
         # Should contain custom file format pattern
         assert "[202" in content  # Year format
@@ -213,7 +213,7 @@ def test_helper_functions_with_custom_formats(tmp_path, monkeypatch):
     # Verify all logs use custom format
     log_file = tmp_path / ".r3a-minikit" / "logs" / "r3a-minikit.log" 
     assert log_file.exists()
-    with open(log_file) as f:
+    with open(log_file, encoding="utf-8") as f:
         content = f.read()
         # Should use custom format (level:message, no timestamps due to date format)
         assert "INFO:Test from get_logger" in content or "INFO:Logging initialized" in content

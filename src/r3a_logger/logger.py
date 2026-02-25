@@ -6,6 +6,16 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional, Tuple
 
+# Default format strings
+DEFAULT_FILE_FORMAT: Tuple[str, str] = (
+    "%(asctime)s | %(levelname)-8s | %(funcName)s:%(lineno)d | %(message)s",
+    "%Y-%m-%d %H:%M:%S",
+)
+DEFAULT_CONSOLE_FORMAT: Tuple[str, str] = (
+    "%(asctime)s | %(levelname)-8s | %(funcName)s | %(message)s",
+    "%H:%M:%S",
+)
+
 # Global singleton instance for logger management
 _instance: Optional["R3ALogger"] = None
 
@@ -22,8 +32,8 @@ class R3ALogger:
         console_logging: bool = False,
         logger_name: str = "r3a-minikit",
         log_file_name: Optional[str] = None,
-        file_format: Tuple[str, str] = ("%(asctime)s | %(levelname)-8s | %(funcName)s:%(lineno)d | %(message)s", "%Y-%m-%d %H:%M:%S"),
-        console_format: Tuple[str, str] = ("%(asctime)s | %(levelname)-8s | %(funcName)s | %(message)s", "%H:%M:%S"),
+        file_format: Tuple[str, str] = DEFAULT_FILE_FORMAT,
+        console_format: Tuple[str, str] = DEFAULT_CONSOLE_FORMAT,
     ):
         """Initialize the logger.
 
@@ -126,8 +136,8 @@ def get_logger(
     console_logging: bool = False,
     logger_name: str = "r3a-minikit",
     log_file_name: Optional[str] = None,
-    file_format: Tuple[str, str] = ("%(asctime)s | %(levelname)-8s | %(funcName)s:%(lineno)d | %(message)s", "%Y-%m-%d %H:%M:%S"),
-    console_format: Tuple[str, str] = ("%(asctime)s | %(levelname)-8s | %(funcName)s | %(message)s", "%H:%M:%S"),
+    file_format: Tuple[str, str] = DEFAULT_FILE_FORMAT,
+    console_format: Tuple[str, str] = DEFAULT_CONSOLE_FORMAT,
 ) -> logging.Logger:
     """Get a configured logger instance.
 
@@ -161,8 +171,8 @@ def setup_logging(
     console_logging: bool = False,
     logger_name: str = "r3a-minikit",
     log_file_name: Optional[str] = None,
-    file_format: Tuple[str, str] = ("%(asctime)s | %(levelname)-8s | %(funcName)s:%(lineno)d | %(message)s", "%Y-%m-%d %H:%M:%S"),
-    console_format: Tuple[str, str] = ("%(asctime)s | %(levelname)-8s | %(funcName)s | %(message)s", "%H:%M:%S"),
+    file_format: Tuple[str, str] = DEFAULT_FILE_FORMAT,
+    console_format: Tuple[str, str] = DEFAULT_CONSOLE_FORMAT,
 ) -> logging.Logger:
     """Setup and configure logging for r3a-minikit.
 
@@ -186,8 +196,8 @@ def setup_logging(
 def initialize_logging(
     log_level: str = "INFO",
     console_logging: bool = False,
-    file_format: Tuple[str, str] = ("%(asctime)s | %(levelname)-8s | %(funcName)s:%(lineno)d | %(message)s", "%Y-%m-%d %H:%M:%S"),
-    console_format: Tuple[str, str] = ("%(asctime)s | %(levelname)-8s | %(funcName)s | %(message)s", "%H:%M:%S"),
+    file_format: Tuple[str, str] = DEFAULT_FILE_FORMAT,
+    console_format: Tuple[str, str] = DEFAULT_CONSOLE_FORMAT,
 ) -> None:
     """Initialize logging with specified level.
     Args:
