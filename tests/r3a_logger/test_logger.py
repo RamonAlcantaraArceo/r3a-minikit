@@ -104,7 +104,15 @@ def test_get_current_logger_returns_logger(tmp_path):
     log_dir = tmp_path / ".r3a-minikit" / "logs"
     logger_mod.initialize_logging(log_dir=log_dir)
     log = get_current_logger()
+    # Verify we got a proper logger instance
     assert isinstance(log, logging.Logger)
+    # Log a message and verify it is written to the expected log file
+    log.info("Test message from initialize_logging")
+    log_file = log_dir / "r3a-minikit.log"
+    assert log_file.exists()
+    with open(log_file, encoding="utf-8") as f:
+        content = f.read()
+        assert "Test message from initialize_logging" in content
 
 
 def test_custom_format_tuples(tmp_path):
