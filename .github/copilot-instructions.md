@@ -77,6 +77,31 @@ poetry run pytest --cov=src --cov-report=term-missing
 - Start with the simplest failing test case.
 - Keep tests small, focused, and colocated with their corresponding module.
 - Use pytest fixtures and idioms rather than unittest-style classes.
+- **Aim for 100% test coverage** - add tests for edge cases, error conditions, and singleton behaviors.
+- **Test parameter variations** - when functions have optional parameters, test both default and custom values.
+- **Test backward compatibility** - ask if backward compatibility is desired; if so, ensure existing functionality continues to work after refactoring.
+- **Use isolated test environments** - employ `tmp_path` fixtures and reset global state between tests.
+
+---
+
+## API Design Guidelines
+
+When developing or refactoring public APIs:
+
+- **Required vs Optional Parameters**: Make essential parameters required (like `log_dir` for file operations), provide sensible defaults for convenience parameters.
+- **Backward Compatibility**: When backward compatibility is desired when adding parameters, use defaults that preserve existing behavior. Ask if backward compatibility is a concern before making breaking changes.
+- **Singleton Patterns**: Document singleton behavior clearly and test that instances are reused appropriately.
+- **Parameter Documentation**: Document not just what parameters do, but their default values and behavioral implications.
+- **Behavior Nuances**: Document non-obvious behaviors (e.g., initialization messages always logged at INFO level).
+
+---
+
+## Documentation Standards
+
+- **Docstring Completeness**: Document all parameters, return values, and any side effects.
+- **Behavioral Notes**: Add "Note:" sections for non-obvious behaviors or implementation details.
+- **Default Value Clarification**: When functions use other functions' defaults, document what those defaults are.
+- **Edge Case Documentation**: Document special cases, error conditions, and unusual parameter combinations.
 
 ---
 
@@ -87,9 +112,13 @@ The GitHub Actions workflow (`.github/workflows/ci.yml`) runs on every push and 
 1. `poetry run ruff format --check`
 2. `poetry run ruff check src/ tests/`
 3. `poetry run mypy src/ tests/`
-4. `poetry run pytest --cov=src --cov-report=xml --cov-report=term-missing`
+4. `poetry run pytest --cov=src --cov-report=xml --cov-report=term-missing --junitxml=junit.xml`
 
-Replicate this sequence locally before pushing.
+After tests complete, the CI automatically uploads:
+- **Coverage reports** to [Codecov](https://codecov.io) for coverage tracking and PR analysis
+- **Test results** to Codecov for test failure analysis and trends
+
+Replicate this sequence locally before pushing. While coverage upload requires CI secrets, you can monitor local coverage with `--cov-report=term-missing`.
 
 ---
 
@@ -102,4 +131,24 @@ Replicate this sequence locally before pushing.
 - Keep `__init__.py` files minimal.
 - Use `pathlib.Path` instead of `os.path` for filesystem operations.
 - Prefer pytest idioms over unittest patterns.
+
+---
+
+## Development Workflow
+
+When adding or modifying packages:
+
+1. **Make changes** to source code with proper type hints and docstrings
+2. **Add/update tests** to maintain 100% coverage and test edge cases
+3. **Run the full check sequence**:
+   ```bash
+   poetry run ruff format
+   poetry run ruff check src/ tests/
+   poetry run mypy src/ tests/
+   poetry run pytest --cov=src --cov-report=term-missing
+   ```
+4. **Update documentation** if public APIs change
+5. **Test backward compatibility** if modifying existing functions
+
+**Remember**: All CI checks must pass before committing. When in doubt, run the full test suite and linting checks locally first.
 
