@@ -4,7 +4,7 @@ import logging
 import logging.handlers
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Tuple
 
 # Global singleton instance for logger management
 _instance: Optional["R3ALogger"] = None
@@ -19,9 +19,11 @@ class R3ALogger:
         log_level: str = "INFO",
         max_file_size: int = 10 * 1024 * 1024,  # 10MB
         backup_count: int = 5,
-        console_logging: bool = True,
+        console_logging: bool = False,
         logger_name: str = "r3a-minikit",
         log_file_name: Optional[str] = None,
+        file_format: Tuple[str, str] = ("%(asctime)s | %(levelname)-8s | %(funcName)s:%(lineno)d | %(message)s", "%Y-%m-%d %H:%M:%S"),
+        console_format: Tuple[str, str] = ("%(asctime)s | %(levelname)-8s | %(funcName)s | %(message)s", "%H:%M:%S"),
     ):
         """Initialize the logger.
 
@@ -30,10 +32,12 @@ class R3ALogger:
             log_level: Logging level (DEBUG, INFO, WARNING, ERROR)
             max_file_size: Maximum size of log file before rotation
             backup_count: Number of backup files to keep
-            console_logging: Whether to enable console logging
+            console_logging: Whether to enable console logging (default: False)
             logger_name: Name for the logger instance (default: "r3a-minikit")
             log_file_name: Optional log file name. If not set, uses logger_name
                 + ".log".
+            file_format: Tuple of (format_string, datefmt) for file output
+            console_format: Tuple of (format_string, datefmt) for console output
         """
         self.log_dir = log_dir
         self.log_level = getattr(logging, log_level.upper(), logging.INFO)
@@ -55,13 +59,13 @@ class R3ALogger:
 
         # Create formatters
         self.file_formatter = logging.Formatter(
-            "%(asctime)s | %(levelname)-8s | %(funcName)s:%(lineno)d | %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
+            file_format[0],
+            datefmt=file_format[1],
         )
 
         self.console_formatter = logging.Formatter(
-            "%(asctime)s | %(levelname)-8s | %(funcName)s | %(message)s",
-            datefmt="%H:%M:%S",
+            console_format[0],
+            datefmt=console_format[1],
         )
 
         # Setup file logging with rotation
@@ -119,9 +123,11 @@ class R3ALogger:
 def get_logger(
     log_dir: Path,
     log_level: str = "INFO",
-    console_logging: bool = True,
+    console_logging: bool = False,
     logger_name: str = "r3a-minikit",
     log_file_name: Optional[str] = None,
+    file_format: Tuple[str, str] = ("%(asctime)s | %(levelname)-8s | %(funcName)s:%(lineno)d | %(message)s", "%Y-%m-%d %H:%M:%S"),
+    console_format: Tuple[str, str] = ("%(asctime)s | %(levelname)-8s | %(funcName)s | %(message)s", "%H:%M:%S"),
 ) -> logging.Logger:
     """Get a configured logger instance.
 
@@ -142,6 +148,8 @@ def get_logger(
             console_logging=console_logging,
             logger_name=logger_name,
             log_file_name=log_file_name,
+            file_format=file_format,
+            console_format=console_format,
         )
 
     return _instance.get_logger()
@@ -150,16 +158,20 @@ def get_logger(
 def setup_logging(
     log_dir: Path,
     log_level: str = "INFO",
-    console_logging: bool = True,
+    console_logging: bool = False,
     logger_name: str = "r3a-minikit",
     log_file_name: Optional[str] = None,
+    file_format: Tuple[str, str] = ("%(asctime)s | %(levelname)-8s | %(funcName)s:%(lineno)d | %(message)s", "%Y-%m-%d %H:%M:%S"),
+    console_format: Tuple[str, str] = ("%(asctime)s | %(levelname)-8s | %(funcName)s | %(message)s", "%H:%M:%S"),
 ) -> logging.Logger:
     """Setup and configure logging for r3a-minikit.
 
     Args:
         log_dir: Directory for log files
         log_level: Logging level
-        console_logging: Whether to enable console logging
+        console_logging: Whether to enable console logging (default: False)
+        file_format: Tuple of (format_string, datefmt) for file output
+        console_format: Tuple of (format_string, datefmt) for console output
 
     Returns:
         Configured logger instance
@@ -168,42 +180,38 @@ def setup_logging(
     global _instance
     _instance = None
 
-    return get_logger(log_dir, log_level, console_logging, logger_name, log_file_name)
+    return get_logger(log_dir, log_level, console_logging, logger_name, log_file_name, file_format, console_format)
 
 
 def initialize_logging(
-    verbose: bool = False,
-    debug: bool = False,
+    log_level: str = "INFO",
     console_logging: bool = False,
-    log_level: Optional[str] = None,
+    file_format: Tuple[str, str] = ("%(asctime)s | %(levelname)-8s | %(funcName)s:%(lineno)d | %(message)s", "%Y-%m-%d %H:%M:%S"),
+    console_format: Tuple[str, str] = ("%(asctime)s | %(levelname)-8s | %(funcName)s | %(message)s", "%H:%M:%S"),
 ) -> None:
-    """Initialize logging based on verbosity settings.
+    """Initialize logging with specified level.
     Args:
-        verbose: Enable verbose logging (INFO level)
-        debug: Enable debug logging (DEBUG level)
+        log_level: Logging level (default: INFO)
         console_logging: Enable console logging (default False)
+        file_format: Tuple of (format_string, datefmt) for file output
+        console_format: Tuple of (format_string, datefmt) for console output
     """
-    # Determine log level
-    if log_level:
-        pass  # pragma nocover
-    elif debug:
-        log_level = "DEBUG"
-    elif verbose:
-        log_level = "INFO"
-    else:
-        log_level = "WARNING"
-
     log_dir = Path.home() / ".r3a-minikit" / "logs"
+
+    # Start at INFO level to ensure initialization message is always visible
     logger = setup_logging(
-        log_dir=log_dir, log_level=log_level, console_logging=console_logging
+        log_dir=log_dir, log_level="INFO", console_logging=console_logging,
+        file_format=file_format, console_format=console_format
     )
 
-    if debug:
-        logger.debug("Logging initialized at DEBUG level")
-    elif verbose:
-        logger.info("Logging initialized at INFO level")
-    else:
-        logger.warning(f"Logging initialized at {log_level} level")
+    logger.info(f"Logging initialized at {log_level} level")
+    
+    # Now switch to the desired level if different from INFO
+    if log_level != "INFO":
+        level = getattr(logging, log_level.upper(), logging.INFO)
+        logger.setLevel(level)
+        for handler in logger.handlers:
+            handler.setLevel(level)
 
 
 def get_current_logger() -> Optional[logging.Logger]:
