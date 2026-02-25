@@ -9,7 +9,6 @@ from r3a_logger.logger import (
     R3ALogger,
     get_current_logger,
     get_logger,
-    initialize_logging,
     setup_logging,
 )
 
@@ -112,24 +111,24 @@ def test_get_current_logger_returns_logger(monkeypatch, tmp_path):
 def test_custom_format_tuples(tmp_path):
     """Test that custom format tuples work correctly."""
     log_dir = tmp_path / "logs"
-    
+
     # Define custom formats
     custom_file_format = ("[%(asctime)s] %(levelname)s: %(message)s", "%Y/%m/%d %H:%M")
     custom_console_format = ("%(levelname)s - %(message)s", "%H:%M:%S")
-    
+
     # Create logger with custom formats
     logger_obj = R3ALogger(
-        log_dir, 
-        log_level="INFO", 
+        log_dir,
+        log_level="INFO",
         console_logging=True,
         file_format=custom_file_format,
-        console_format=custom_console_format
+        console_format=custom_console_format,
     )
-    
+
     logger = logger_obj.get_logger()
     logger.info("Test message with custom format")
     logger.warning("Warning with custom format")
-    
+
     # Check file format
     log_file = log_dir / "r3a-minikit.log"
     assert log_file.exists()
@@ -142,7 +141,7 @@ def test_custom_format_tuples(tmp_path):
         assert "Test message with custom format" in content
         # Should NOT contain the default format patterns
         assert " | " not in content  # Default separator
-        
+
     # Verify formatters are using custom formats
     file_handler = None
     console_handler = None
@@ -151,13 +150,13 @@ def test_custom_format_tuples(tmp_path):
             file_handler = handler
         elif isinstance(handler, logging.StreamHandler):
             console_handler = handler
-    
+
     assert file_handler is not None
     assert console_handler is not None
 
     assert file_handler.formatter is not None
     assert console_handler.formatter is not None
-    
+
     # Check that formatters have the custom format strings
     assert file_handler.formatter._fmt == custom_file_format[0]
     assert file_handler.formatter.datefmt == custom_file_format[1]
@@ -172,50 +171,53 @@ def test_helper_functions_with_custom_formats(tmp_path, monkeypatch):
     from r3a_logger import logger as logger_mod
 
     logger_mod._instance = None
-    
+
     log_dir = tmp_path / "logs"
     custom_file_format = ("%(levelname)s:%(message)s", "%Y%m%d")
     custom_console_format = ("%(message)s", "%H%M%S")
-    
+
     # Test get_logger with custom formats
     logger1 = get_logger(
-        log_dir, 
-        log_level="INFO", 
+        log_dir,
+        log_level="INFO",
         console_logging=True,
         file_format=custom_file_format,
-        console_format=custom_console_format
+        console_format=custom_console_format,
     )
     logger1.info("Test from get_logger")
-    
+
     # Test setup_logging with custom formats
     logger_mod._instance = None
     logger2 = setup_logging(
-        log_dir, 
-        log_level="INFO", 
+        log_dir,
+        log_level="INFO",
         console_logging=True,
         file_format=custom_file_format,
-        console_format=custom_console_format
+        console_format=custom_console_format,
     )
     logger2.info("Test from setup_logging")
-    
+
     # Test initialize_logging with custom formats
     logger_mod._instance = None
     logger_mod.initialize_logging(
-        log_level="INFO", 
+        log_level="INFO",
         console_logging=True,
         file_format=custom_file_format,
-        console_format=custom_console_format
+        console_format=custom_console_format,
     )
     logger3 = logger_mod.get_current_logger()
     assert logger3 is not None
     logger3.info("Test from initialize_logging")
-    
+
     # Verify all logs use custom format
-    log_file = tmp_path / ".r3a-minikit" / "logs" / "r3a-minikit.log" 
+    log_file = tmp_path / ".r3a-minikit" / "logs" / "r3a-minikit.log"
     assert log_file.exists()
     with open(log_file, encoding="utf-8") as f:
         content = f.read()
         # Should use custom format (level:message, no timestamps due to date format)
-        assert "INFO:Test from get_logger" in content or "INFO:Logging initialized" in content
+        assert (
+            "INFO:Test from get_logger" in content
+            or "INFO:Logging initialized" in content
+        )
         # Should NOT contain default format patterns
         assert " | " not in content

@@ -190,7 +190,15 @@ def setup_logging(
     global _instance
     _instance = None
 
-    return get_logger(log_dir, log_level, console_logging, logger_name, log_file_name, file_format, console_format)
+    return get_logger(
+        log_dir,
+        log_level,
+        console_logging,
+        logger_name,
+        log_file_name,
+        file_format,
+        console_format,
+    )
 
 
 def initialize_logging(
@@ -210,12 +218,15 @@ def initialize_logging(
 
     # Start at INFO level to ensure initialization message is always visible
     logger = setup_logging(
-        log_dir=log_dir, log_level="INFO", console_logging=console_logging,
-        file_format=file_format, console_format=console_format
+        log_dir=log_dir,
+        log_level="INFO",
+        console_logging=console_logging,
+        file_format=file_format,
+        console_format=console_format,
     )
 
     logger.info(f"Logging initialized at {log_level} level")
-    
+
     # Now switch to the desired level if different from INFO
     if log_level != "INFO":
         level = getattr(logging, log_level.upper(), logging.INFO)
