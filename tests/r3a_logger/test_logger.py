@@ -395,7 +395,3 @@ def test_initialize_logging_with_default_log_file_name(tmp_path):
     with open(log_file, encoding="utf-8") as f:
         content = f.read()
         assert "Logging initialized at INFO level" in content
-
-
-def test_fail():
-    assert False, "This test is designed to fail to verify test failure reporting."
