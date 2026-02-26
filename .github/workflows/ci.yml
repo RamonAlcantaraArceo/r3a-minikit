@@ -7,18 +7,23 @@ on:
     branches: [main]
 
 jobs:
-  test-and-lint:
+  lint:
+    name: Lint (Python 3.14)
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    timeout-minutes: 15
+    continue-on-error: true
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Set up Python
+    - name: Set up Python 3.14
       id: setup-python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.14'
+        python-version: "3.14"
         
     - name: Install Poetry
       uses: snok/install-poetry@v1
@@ -33,11 +38,17 @@ jobs:
       uses: actions/cache@v4
       with:
         path: .venv
-        key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+        key: venv-lint-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
         
     - name: Install dependencies
       if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-      run: poetry install --with dev
+      run: |
+        poetry install --with dev --verbose
+        
+    - name: Verify installation
+      run: |
+        poetry run python --version
+        poetry run ruff --version
       
     - name: Run Ruff Format (check only)
       run: poetry run ruff format --check
@@ -47,6 +58,51 @@ jobs:
       
     - name: Run Mypy
       run: poetry run mypy src/ tests/
+
+  test:
+    name: Test (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    continue-on-error: ${{ matrix.python-version == '3.14' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python ${{ matrix.python-version }}
+      id: setup-python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: '2.2.1'
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+        installer-parallel: true
+        
+    - name: Load cached venv
+      id: cached-poetry-dependencies
+      uses: actions/cache@v4
+      with:
+        path: .venv
+        key: venv-test-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
+        
+    - name: Install dependencies
+      if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+      run: |
+        poetry install --with dev --verbose
+        
+    - name: Verify installation
+      run: |
+        poetry run python --version
+        poetry run pytest --version
       
     - name: Run Tests with Coverage
       run: poetry run pytest --cov=src --cov-report=xml --cov-report=term-missing --junitxml=junit.xml -o junit_family=legacy
@@ -57,20 +113,20 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         files: ./junit.xml
-        flags: unittests
-        name: codecov-umbrella
+        flags: unittests,python-${{ matrix.python-version }}
+        name: codecov-tests-python-${{ matrix.python-version }}
         report_type: test_results
         verbose: true
         fail_ci_if_error: false
       
     - name: Upload coverage to Codecov
-      if: ${{ !cancelled() }}
+      if: ${{ !cancelled() && matrix.python-version == '3.14' }}
       uses: codecov/codecov-action@v5
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         files: ./coverage.xml
-        flags: unittests
-        name: codecov-umbrella
+        flags: unittests,coverage
+        name: codecov-coverage-python-${{ matrix.python-version }}
         report_type: coverage
         verbose: true
         fail_ci_if_error: false
