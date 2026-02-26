@@ -62,7 +62,7 @@ jobs:
         echo "VERSION=$VERSION" >> $GITHUB_ENV
         
         # Extract changelog section for this version
-        awk "/^## \[$VERSION\]/{flag=1; next} /^## \[/{flag=0} flag" CHANGELOG.md > release_notes.md
+        awk "/^## \[$VERSION\]/{flag=1; next} /^## \[|^\[.*\]: https/{flag=0} flag" CHANGELOG.md > release_notes.md
         
         # Check if release notes were extracted
         if [ ! -s release_notes.md ]; then
