@@ -105,11 +105,51 @@ If you need to manually modify the version:
 
 ### Creating a Release
 
-1. **Update changelog** (if using manual process):
+#### Step 1: Prepare Release Branch
+
+1. **Create a release branch**:
+   ```bash
+   git checkout -b release/v0.0.2  # Use actual version number
+   ```
+
+2. **Update changelog** (if needed):
    - Add changes under `[Unreleased]` section in `CHANGELOG.md`
    - Follow [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format
 
-2. **Bump the version**:
+3. **Make any final release preparations** (documentation updates, etc.)
+
+4. **Commit and push release branch**:
+   ```bash
+   git add .
+   git commit -m "Prepare release v0.0.2"
+   git push origin release/v0.0.2
+   ```
+
+#### Step 2: Create and Review Pull Request
+
+5. **Create PR for release branch**:
+   ```bash
+   gh pr create --title "Release v0.0.2" --body "Release preparation for v0.0.2"
+   ```
+   Or create manually on GitHub: `release/v0.0.2` → `main`
+
+6. **Review the PR**:
+   - ✅ Ensure all CI checks pass
+   - ✅ Review changelog entries
+   - ✅ Verify all intended changes are included
+   - ✅ Test critical functionality if needed
+
+7. **Merge the PR** once approved
+
+#### Step 3: Create Release
+
+8. **Return to main and pull latest**:
+   ```bash
+   git checkout main
+   git pull origin main
+   ```
+
+9. **Bump the version** (creates commit and tag):
    ```bash
    # For bug fixes
    bump2version patch
@@ -121,22 +161,28 @@ If you need to manually modify the version:
    bump2version major
    ```
 
-3. **Push the tag**:
-   ```bash
-   git push origin main --tags
-   ```
+10. **Push the tag**:
+    ```bash
+    git push origin main --tags
+    ```
 
-4. **Trigger GitHub Release**:
-   - Go to [Actions tab](https://github.com/RamonAlcantaraArceo/r3a-minikit/actions)
-   - Click "Release" workflow
-   - Click "Run workflow"
-   - Enter the tag name (e.g., `v0.0.2`)
-   - Click "Run workflow"
+11. **Trigger GitHub Release**:
+    - Go to [Actions tab](https://github.com/RamonAlcantaraArceo/r3a-minikit/actions)
+    - Click "Release" workflow
+    - Click "Run workflow"
+    - Enter the tag name (e.g., `v0.0.2`)
+    - Click "Run workflow"
 
-5. **Verify the release**:
-   - Check the [Releases page](https://github.com/RamonAlcantaraArceo/r3a-minikit/releases)
-   - Verify the changelog excerpt appears in release notes
-   - Test installation: `pip install git+https://github.com/RamonAlcantaraArceo/r3a-minikit.git@v0.0.2`
+12. **Verify the release**:
+    - Check the [Releases page](https://github.com/RamonAlcantaraArceo/r3a-minikit/releases)
+    - Verify the changelog excerpt appears in release notes
+    - Test installation: `pip install git+https://github.com/RamonAlcantaraArceo/r3a-minikit.git@v0.0.2`
+
+13. **Clean up**:
+    ```bash
+    git branch -d release/v0.0.2        # Delete local branch
+    git push origin --delete release/v0.0.2  # Delete remote branch
+    ```
 
 ### Release Workflow
 
