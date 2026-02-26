@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.1-beta.3] - 2026-02-25
+
+### 🧪 Testing Release Infrastructure
+- **Release Workflow**: Fixed GitHub Actions permissions (403 error resolved)
+- **Token Handling**: Upgraded to `softprops/action-gh-release@v2` with improved token support
+- **Prerelease Detection**: Auto-detection of prereleases (beta, alpha, rc) via tag name pattern  
+- **Changelog Integration**: Testing changelog extraction for release notes ✅
+- **Build Process**: Verified package builds correctly with Poetry
+- **CI Validation**: Full test suite passes (linting, type checking, 100% coverage)
+
+### 🎯 What's Being Tested
+- GitHub release creation with proper permissions
+- Change log content extraction and formatting
+- Package artifact generation (`.tar.gz` and `.whl` files)
+- Prerelease marking for beta versions
+
+This is a **beta release** to validate the complete release infrastructure before the official v0.0.1 release.
+
 ## [0.0.1] - 2026-02-25
 
 ### Added
@@ -24,4 +42,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Coverage reporting with Codecov
 
 [Unreleased]: https://github.com/RamonAlcantaraArceo/r3a-minikit/compare/v0.0.1...HEAD
+[0.0.1-beta.3]: https://github.com/RamonAlcantaraArceo/r3a-minikit/releases/tag/v0.0.1-beta.3
 [0.0.1]: https://github.com/RamonAlcantaraArceo/r3a-minikit/releases/tag/v0.0.1
