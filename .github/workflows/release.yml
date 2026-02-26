@@ -11,6 +11,10 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: read
+      pull-requests: read
     
     steps:
     - name: Checkout code
@@ -78,6 +82,6 @@ jobs:
           dist/*.tar.gz
           dist/*.whl
         draft: false
-        prerelease: false
+        prerelease: ${{ contains(inputs.tag, '-') }}  # Auto-detect prereleases (alpha, beta, rc)
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
