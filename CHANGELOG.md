@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Changelog Extraction**: Improved awk script to properly extract release notes without including reference links
+
+### Added
+- **Release Notes**: Clean extraction of changelog sections for GitHub releases without footer links
+
 ## [0.0.1] - 2026-02-25
 
 ### Added
