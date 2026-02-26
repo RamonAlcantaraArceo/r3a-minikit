@@ -73,14 +73,40 @@ This project uses [Poetry](https://python-poetry.org/) for dependency management
 git clone https://github.com/RamonAlcantaraArceo/r3a-minikit.git
 cd r3a-minikit
 
+# Install Python versions (using mise)
+mise install
+
 # Install dependencies
 poetry install --with dev
 ```
 
+> **Note**: This project uses [mise](https://mise.jdx.dev/) to manage multiple Python versions (3.10-3.14). The `mise.toml` file automatically configures the required Python versions for testing.
+
+### Multi-Version Testing
+
+This project supports Python 3.10-3.14. Use `tox` for comprehensive testing:
+
+```bash
+# Run tests across all Python versions in parallel
+tox
+
+# Run only tests (skip linting/formatting)
+tox -m tests
+
+# Run only linting and formatting
+tox -m style
+
+# Run specific Python version
+tox -e py313
+```
+
 ### Running Tests
 ```bash
-# Run tests with coverage
+# Quick test run (single Python version)
 poetry run pytest --cov=src --cov-report=term-missing
+
+# Full multi-version testing
+tox
 
 # Run specific test file
 poetry run pytest tests/r3a_logger/test_logger.py -v

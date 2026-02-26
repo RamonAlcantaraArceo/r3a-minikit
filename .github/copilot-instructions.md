@@ -27,11 +27,13 @@ Each package must be registered in `pyproject.toml` under `packages` (e.g., `{ i
 
 ## Build & Development
 
-- **Python**: ≥ 3.14  
+- **Python**: ≥ 3.10 (supports 3.10-3.14)  
+- **Python version manager**: [mise](https://mise.jdx.dev/) - configured via `mise.toml`
 - **Package manager**: Poetry (≥ 2)
 - Install dependencies:
 
 ```bash
+mise install        # Install required Python versions
 poetry install --with dev
 ```
 
@@ -59,7 +61,26 @@ After generating or modifying code, always run the formatter and linter.
 
 ## Testing
 
-Tests use **pytest** (not unittest).  
+Tests use **pytest** (not unittest) with **tox** for multi-version testing across Python 3.10-3.14.
+
+### Single version testing:
+```bash
+poetry run pytest --cov=src --cov-report=term-missing
+```
+
+### Multi-version testing:
+```bash
+tox                    # Run all environments (tests + linting)
+tox -m tests          # Run only test environments (py310-py314)
+tox -m style          # Run only linting/formatting
+tox -e py312          # Run specific Python version
+```
+
+The `tox.ini` configuration includes:
+- Parallel execution by default
+- Environment labels for grouped execution (tests, style)
+- Separate lint/format environments to avoid redundancy
+
 Place test files in `tests/<package_name>/` using the naming convention:
 
 ```
