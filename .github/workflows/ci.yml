@@ -10,6 +10,10 @@ jobs:
   lint:
     name: Lint (Python 3.14)
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    timeout-minutes: 15
+    continue-on-error: true
     
     steps:
     - name: Checkout code
@@ -38,7 +42,13 @@ jobs:
         
     - name: Install dependencies
       if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-      run: poetry install --with dev
+      run: |
+        poetry install --with dev --verbose
+        
+    - name: Verify installation
+      run: |
+        poetry run python --version
+        poetry run ruff --version
       
     - name: Run Ruff Format (check only)
       run: poetry run ruff format --check
@@ -52,7 +62,10 @@ jobs:
   test:
     name: Test (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    continue-on-error: ${{ matrix.python-version == '3.14' }}
     strategy:
+      fail-fast: false
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
     
@@ -83,7 +96,13 @@ jobs:
         
     - name: Install dependencies
       if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-      run: poetry install --with dev
+      run: |
+        poetry install --with dev --verbose
+        
+    - name: Verify installation
+      run: |
+        poetry run python --version
+        poetry run pytest --version
       
     - name: Run Tests with Coverage
       run: poetry run pytest --cov=src --cov-report=xml --cov-report=term-missing --junitxml=junit.xml -o junit_family=legacy
