@@ -22,7 +22,11 @@ r3a-minikit (where **r3a** stands for **R**amon **A**ntonio **A**lcantara **A**r
 ## Installation
 
 ```bash
-pip install r3a-minikit
+# Install from GitHub release
+pip install https://github.com/RamonAlcantaraArceo/r3a-minikit/releases/download/v0.0.1/r3a_minikit-0.0.1-py3-none-any.whl
+
+# Or with Poetry
+poetry add https://github.com/RamonAlcantaraArceo/r3a-minikit/releases/download/v0.0.1/r3a_minikit-0.0.1-py3-none-any.whl
 ```
 
 ## Quick Start
