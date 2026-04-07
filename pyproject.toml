@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "r3a-minikit"
-version = "0.0.1"
+version = "0.0.2"
 description = "A collection of utilities and mini modules I often end up using over and over"
 authors = ["Ramon Alcantara Arceo <ramalc.ms@outlook.com>"]
 license = "MIT"

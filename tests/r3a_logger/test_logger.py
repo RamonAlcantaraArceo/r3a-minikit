@@ -4,12 +4,43 @@ import logging
 import logging.handlers
 import os
 
+import pytest
+
 from r3a_logger.logger import (
     R3ALogger,
     get_current_logger,
     get_logger,
     setup_logging,
 )
+
+
+@pytest.fixture(autouse=True)
+def reset_logging_state():
+    """Reset singleton and logging handlers for test isolation."""
+    from r3a_logger import logger as logger_mod
+
+    logger_mod._instance = None
+
+    root_logger = logging.getLogger()
+    for handler in list(root_logger.handlers):
+        root_logger.removeHandler(handler)
+        handler.close()
+    root_logger.setLevel(logging.WARNING)
+
+    yield
+
+    logger_mod._instance = None
+    for logger_name in ["r3a-minikit", "custom-logger", "my-service"]:
+        test_logger = logging.getLogger(logger_name)
+        for handler in list(test_logger.handlers):
+            test_logger.removeHandler(handler)
+            handler.close()
+
+    root_logger = logging.getLogger()
+    for handler in list(root_logger.handlers):
+        root_logger.removeHandler(handler)
+        handler.close()
+    root_logger.setLevel(logging.WARNING)
 
 
 def test_logger_creates_log_file_and_console(tmp_path):
@@ -395,3 +426,91 @@ def test_initialize_logging_with_default_log_file_name(tmp_path):
     with open(log_file, encoding="utf-8") as f:
         content = f.read()
         assert "Logging initialized at INFO level" in content
+
+
+def test_module_logger_propagates_to_root_handlers(tmp_path):
+    log_dir = tmp_path / "logs"
+    R3ALogger(log_dir, log_level="DEBUG", console_logging=False)
+
+    module_logger = logging.getLogger("my_app.module")
+    module_logger.setLevel(logging.DEBUG)
+    module_logger.debug("module debug message")
+
+    log_file = log_dir / "r3a-minikit.log"
+    with open(log_file, encoding="utf-8") as f:
+        content = f.read()
+        assert "module debug message" in content
+
+
+def test_third_party_logger_is_captured_by_root(tmp_path):
+    log_dir = tmp_path / "logs"
+    R3ALogger(log_dir, log_level="INFO", console_logging=False)
+
+    third_party_logger = logging.getLogger("urllib3.connectionpool")
+    third_party_logger.setLevel(logging.INFO)
+    third_party_logger.info("third party info message")
+
+    log_file = log_dir / "r3a-minikit.log"
+    with open(log_file, encoding="utf-8") as f:
+        content = f.read()
+        assert "third party info message" in content
+
+
+def test_root_patch_can_be_disabled(tmp_path):
+    log_dir = tmp_path / "logs"
+    R3ALogger(
+        log_dir,
+        log_level="DEBUG",
+        console_logging=False,
+        patch_root_logger=False,
+    )
+
+    module_logger = logging.getLogger("my_app.no_root_patch")
+    module_logger.setLevel(logging.DEBUG)
+    module_logger.debug("message should not be captured")
+
+    log_file = log_dir / "r3a-minikit.log"
+    with open(log_file, encoding="utf-8") as f:
+        content = f.read()
+        assert "message should not be captured" not in content
+
+
+def test_no_duplicate_entries_from_main_logger_with_root_patch(tmp_path):
+    log_dir = tmp_path / "logs"
+    logger = R3ALogger(log_dir, log_level="INFO", console_logging=False).get_logger()
+
+    logger.info("single message")
+
+    log_file = log_dir / "r3a-minikit.log"
+    with open(log_file, encoding="utf-8") as f:
+        lines = [line for line in f if "single message" in line]
+    assert len(lines) == 1
+
+
+def test_handler_identity_non_textio_stream(tmp_path):
+    """_handler_identity returns id-based key for non-TextIOBase streams."""
+    import io
+
+    from r3a_logger.logger import R3ALogger as _R3ALogger
+
+    log_dir = tmp_path / "logs"
+    instance = _R3ALogger(log_dir, log_level="INFO", patch_root_logger=False)
+
+    handler = logging.StreamHandler(io.BytesIO())
+    key = instance._handler_identity(handler)
+    assert key[0] == "stream"
+
+
+def test_handler_identity_generic_handler(tmp_path):
+    """_handler_identity returns class-name key for generic Handler subclasses."""
+    from r3a_logger.logger import R3ALogger as _R3ALogger
+
+    log_dir = tmp_path / "logs"
+    instance = _R3ALogger(log_dir, log_level="INFO", patch_root_logger=False)
+
+    class _NoStreamHandler(logging.Handler):
+        def emit(self, record: logging.LogRecord) -> None:
+            pass
+
+    key = instance._handler_identity(_NoStreamHandler())
+    assert key == ("handler", "_NoStreamHandler")
