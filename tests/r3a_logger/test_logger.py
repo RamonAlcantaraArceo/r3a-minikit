@@ -4,12 +4,43 @@ import logging
 import logging.handlers
 import os
 
+import pytest
+
 from r3a_logger.logger import (
     R3ALogger,
     get_current_logger,
     get_logger,
     setup_logging,
 )
+
+
+@pytest.fixture(autouse=True)
+def reset_logging_state():
+    """Reset singleton and logging handlers for test isolation."""
+    from r3a_logger import logger as logger_mod
+
+    logger_mod._instance = None
+
+    root_logger = logging.getLogger()
+    for handler in list(root_logger.handlers):
+        root_logger.removeHandler(handler)
+        handler.close()
+    root_logger.setLevel(logging.WARNING)
+
+    yield
+
+    logger_mod._instance = None
+    for logger_name in ["r3a-minikit", "custom-logger", "my-service"]:
+        test_logger = logging.getLogger(logger_name)
+        for handler in list(test_logger.handlers):
+            test_logger.removeHandler(handler)
+            handler.close()
+
+    root_logger = logging.getLogger()
+    for handler in list(root_logger.handlers):
+        root_logger.removeHandler(handler)
+        handler.close()
+    root_logger.setLevel(logging.WARNING)
 
 
 def test_logger_creates_log_file_and_console(tmp_path):
@@ -395,3 +426,312 @@ def test_initialize_logging_with_default_log_file_name(tmp_path):
     with open(log_file, encoding="utf-8") as f:
         content = f.read()
         assert "Logging initialized at INFO level" in content
+
+
+def test_module_logger_propagates_to_root_handlers(tmp_path):
+    log_dir = tmp_path / "logs"
+    R3ALogger(log_dir, log_level="DEBUG", console_logging=False, patch_root_logger=True)
+
+    module_logger = logging.getLogger("my_app.module")
+    module_logger.setLevel(logging.DEBUG)
+    module_logger.debug("module debug message")
+
+    log_file = log_dir / "r3a-minikit.log"
+    with open(log_file, encoding="utf-8") as f:
+        content = f.read()
+        assert "module debug message" in content
+
+
+def test_third_party_logger_is_captured_by_root(tmp_path):
+    log_dir = tmp_path / "logs"
+    R3ALogger(log_dir, log_level="INFO", console_logging=False, patch_root_logger=True)
+
+    third_party_logger = logging.getLogger("urllib3.connectionpool")
+    third_party_logger.setLevel(logging.INFO)
+    third_party_logger.info("third party info message")
+
+    log_file = log_dir / "r3a-minikit.log"
+    with open(log_file, encoding="utf-8") as f:
+        content = f.read()
+        assert "third party info message" in content
+
+
+def test_root_patch_can_be_disabled(tmp_path):
+    log_dir = tmp_path / "logs"
+    R3ALogger(
+        log_dir,
+        log_level="DEBUG",
+        console_logging=False,
+        patch_root_logger=False,
+    )
+
+    module_logger = logging.getLogger("my_app.no_root_patch")
+    module_logger.setLevel(logging.DEBUG)
+    module_logger.debug("message should not be captured")
+
+    log_file = log_dir / "r3a-minikit.log"
+    with open(log_file, encoding="utf-8") as f:
+        content = f.read()
+        assert "message should not be captured" not in content
+
+
+def test_default_patch_root_logger_is_false(tmp_path):
+    """Verify that patch_root_logger defaults to False when not specified."""
+    log_dir = tmp_path / "logs"
+    # Create R3ALogger without specifying patch_root_logger parameter
+    R3ALogger(log_dir, log_level="DEBUG", console_logging=False)
+
+    module_logger = logging.getLogger("my_app.default_no_patch")
+    module_logger.setLevel(logging.DEBUG)
+    module_logger.debug("default behavior message not captured")
+
+    log_file = log_dir / "r3a-minikit.log"
+    with open(log_file, encoding="utf-8") as f:
+        content = f.read()
+        # Module logger messages should not be captured by default
+        assert "default behavior message not captured" not in content
+
+
+def test_no_duplicate_entries_from_main_logger_with_root_patch(tmp_path):
+    log_dir = tmp_path / "logs"
+    logger = R3ALogger(log_dir, log_level="INFO", console_logging=False).get_logger()
+
+    logger.info("single message")
+
+    log_file = log_dir / "r3a-minikit.log"
+    with open(log_file, encoding="utf-8") as f:
+        lines = [line for line in f if "single message" in line]
+    assert len(lines) == 1
+
+
+def test_handler_identity_non_textio_stream(tmp_path):
+    """_handler_identity returns id-based key for non-TextIOBase streams."""
+    import io
+
+    from r3a_logger.logger import R3ALogger as _R3ALogger
+
+    log_dir = tmp_path / "logs"
+    instance = _R3ALogger(log_dir, log_level="INFO", patch_root_logger=False)
+
+    buffer = io.BytesIO()
+    stream = io.TextIOWrapper(buffer, encoding="utf-8")
+
+    handler = logging.StreamHandler(stream=stream)
+    key = instance._handler_identity(handler)
+    assert key[0] == "stream"
+
+
+def test_handler_identity_generic_handler(tmp_path):
+    """_handler_identity returns class-name key for generic Handler subclasses."""
+    from r3a_logger.logger import R3ALogger as _R3ALogger
+
+    log_dir = tmp_path / "logs"
+    instance = _R3ALogger(log_dir, log_level="INFO", patch_root_logger=False)
+
+    class _NoStreamHandler(logging.Handler):
+        def emit(self, record: logging.LogRecord) -> None:
+            pass
+
+    key = instance._handler_identity(_NoStreamHandler())
+    assert key == ("handler", "_NoStreamHandler")
+
+
+def test_set_level_updates_logger_and_all_handlers(tmp_path):
+    """set_level updates logger level and every attached handler level."""
+    log_dir = tmp_path / "logs"
+    logger_obj = R3ALogger(
+        log_dir=log_dir,
+        log_level="ERROR",
+        console_logging=True,
+        patch_root_logger=False,
+    )
+    logger = logger_obj.get_logger()
+
+    logger_obj.set_level("DEBUG")
+
+    assert logger.level == logging.DEBUG
+    assert logger_obj.log_level == logging.ERROR  # constructor value remains unchanged
+    assert logger.handlers  # file + console handlers should exist
+    for handler in logger.handlers:
+        assert handler.level == logging.DEBUG
+
+    logger.debug("debug visible after level change")
+    log_file = log_dir / "r3a-minikit.log"
+    with open(log_file, encoding="utf-8") as f:
+        content = f.read()
+        assert "debug visible after level change" in content
+
+
+def test_set_level_invalid_level_defaults_to_info(tmp_path):
+    """Invalid level names should default to INFO via getattr fallback."""
+    log_dir = tmp_path / "logs"
+    logger_obj = R3ALogger(log_dir=log_dir, log_level="DEBUG", console_logging=False)
+    logger = logger_obj.get_logger()
+
+    logger_obj.set_level("NOT_A_LEVEL")
+
+    assert logger.level == logging.INFO
+    for handler in logger.handlers:
+        assert handler.level == logging.INFO
+
+    logger.debug("debug should not appear")
+    logger.info("info should appear")
+
+    log_file = log_dir / "r3a-minikit.log"
+    with open(log_file, encoding="utf-8") as f:
+        content = f.read()
+        assert "debug should not appear" not in content
+        assert "info should appear" in content
+
+
+def test_set_level_with_root_patch_lowers_root_when_more_verbose(tmp_path):
+    """With root patching enabled, root level is lowered when needed."""
+    log_dir = tmp_path / "logs"
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.WARNING)
+
+    logger_obj = R3ALogger(
+        log_dir=log_dir,
+        log_level="INFO",
+        console_logging=False,
+        patch_root_logger=True,
+    )
+
+    logger_obj.set_level("DEBUG")
+
+    assert root_logger.level == logging.DEBUG
+
+
+def test_set_level_with_root_patch_does_not_raise_root_level(tmp_path):
+    """With root patching enabled, root level should not be increased by set_level."""
+    log_dir = tmp_path / "logs"
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.DEBUG)
+
+    logger_obj = R3ALogger(
+        log_dir=log_dir,
+        log_level="DEBUG",
+        console_logging=False,
+        patch_root_logger=True,
+    )
+
+    logger_obj.set_level("ERROR")
+
+    assert root_logger.level == logging.DEBUG
+
+
+def test_set_level_without_root_patch_keeps_root_level_unchanged(tmp_path):
+    """When patch_root_logger=False, set_level must not modify root logger level."""
+    log_dir = tmp_path / "logs"
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.WARNING)
+
+    logger_obj = R3ALogger(
+        log_dir=log_dir,
+        log_level="INFO",
+        console_logging=False,
+        patch_root_logger=False,
+    )
+
+    logger_obj.set_level("DEBUG")
+
+    assert root_logger.level == logging.WARNING
+
+
+def test_set_level_updates_root_shared_handler_levels_when_patched(tmp_path):
+    """Patched root shares handler objects, so handler levels should reflect set_level."""
+    log_dir = tmp_path / "logs"
+    logger_obj = R3ALogger(
+        log_dir=log_dir,
+        log_level="INFO",
+        console_logging=True,
+        patch_root_logger=True,
+    )
+    logger = logger_obj.get_logger()
+    root_logger = logging.getLogger()
+
+    assert logger.handlers
+    assert root_logger.handlers
+
+    logger_obj.set_level("ERROR")
+
+    # Logger handlers updated
+    for handler in logger.handlers:
+        assert handler.level == logging.ERROR
+
+    # Root handlers include shared objects; they should show same updated level
+    logger_handler_ids = {id(handler) for handler in logger.handlers}
+    shared_root_handlers = [
+        handler for handler in root_logger.handlers if id(handler) in logger_handler_ids
+    ]
+    assert shared_root_handlers
+    for handler in shared_root_handlers:
+        assert handler.level == logging.ERROR
+
+
+def test_handler_identity_textio_stream_with_name(tmp_path):
+    """_handler_identity returns stream-name key for TextIOBase streams with a name."""
+    log_dir = tmp_path / "logs"
+    instance = R3ALogger(log_dir, log_level="INFO", patch_root_logger=False)
+
+    stream_path = tmp_path / "named_stream.log"
+    with open(stream_path, "w", encoding="utf-8") as named_stream:
+        handler = logging.StreamHandler(stream=named_stream)
+        key = instance._handler_identity(handler)
+
+    assert key == ("stream", str(stream_path))
+
+
+def test_patch_root_logger_handlers_second_call_uses_continue_and_keeps_root_stable(
+    tmp_path,
+):
+    """Calling _patch_root_logger_handlers twice should not duplicate root handlers."""
+    log_dir = tmp_path / "logs"
+    logger_obj = R3ALogger(
+        log_dir=log_dir,
+        log_level="INFO",
+        console_logging=True,
+        patch_root_logger=True,
+    )
+    root_logger = logging.getLogger()
+
+    before_count = len(root_logger.handlers)
+    before_keys = [logger_obj._handler_identity(h) for h in root_logger.handlers]
+
+    # Second call should hit the `continue` branch for already-present handler keys.
+    logger_obj._patch_root_logger_handlers()
+
+    after_count = len(root_logger.handlers)
+    after_keys = [logger_obj._handler_identity(h) for h in root_logger.handlers]
+
+    assert after_count == before_count
+    assert sorted(after_keys) == sorted(before_keys)
+
+
+def test_patch_root_logger_handlers_skips_preexisting_equivalent_stream_handler(
+    tmp_path,
+):
+    """Preexisting equivalent stream handler should trigger continue while file handler is added."""
+    log_dir = tmp_path / "logs"
+    root_logger = logging.getLogger()
+
+    preexisting_stream_handler = logging.StreamHandler()
+    root_logger.addHandler(preexisting_stream_handler)
+    preexisting_stream_key = R3ALogger._handler_identity(preexisting_stream_handler)
+    before_count = len(root_logger.handlers)
+
+    logger_obj = R3ALogger(
+        log_dir=log_dir,
+        log_level="INFO",
+        console_logging=True,
+        patch_root_logger=True,
+    )
+
+    after_count = len(root_logger.handlers)
+    root_keys = [logger_obj._handler_identity(h) for h in root_logger.handlers]
+    file_key = ("file", str((log_dir / "r3a-minikit.log").resolve()))
+
+    # Only file handler should be added; stream handler should be skipped via `continue`.
+    assert after_count == before_count + 1
+    assert root_keys.count(preexisting_stream_key) == 1
+    assert root_keys.count(file_key) == 1

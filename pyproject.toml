@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "r3a-minikit"
-version = "0.0.1"
+version = "0.0.2"
 description = "A collection of utilities and mini modules I often end up using over and over"
 authors = ["Ramon Alcantara Arceo <ramalc.ms@outlook.com>"]
 license = "MIT"
@@ -16,7 +16,7 @@ requires = ["poetry-core>=1.8"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.group.dev.dependencies]
-pytest = ">=9.0.2,<10.0.0"
+pytest = ">=9.0.3,<10.0.0"
 pytest-cov = ">=7.0.0,<8.0.0"
 ruff = ">=0.15.2,<0.16.0"
 mypy = ">=1.19.1,<2.0.0"
