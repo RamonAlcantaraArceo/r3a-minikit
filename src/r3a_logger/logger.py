@@ -41,7 +41,7 @@ class R3ALogger:
         log_file_name: Optional[str] = None,
         file_format: Tuple[str, str] = DEFAULT_FILE_FORMAT,
         console_format: Tuple[str, str] = DEFAULT_CONSOLE_FORMAT,
-        patch_root_logger: bool = True,
+        patch_root_logger: bool = False,
     ):
         """Initialize the logger.
 
@@ -192,7 +192,7 @@ def get_logger(
     log_file_name: Optional[str] = None,
     file_format: Tuple[str, str] = DEFAULT_FILE_FORMAT,
     console_format: Tuple[str, str] = DEFAULT_CONSOLE_FORMAT,
-    patch_root_logger: bool = True,
+    patch_root_logger: bool = False,
 ) -> logging.Logger:
     """Get a configured logger instance.
 
@@ -230,7 +230,7 @@ def setup_logging(
     log_file_name: Optional[str] = None,
     file_format: Tuple[str, str] = DEFAULT_FILE_FORMAT,
     console_format: Tuple[str, str] = DEFAULT_CONSOLE_FORMAT,
-    patch_root_logger: bool = True,
+    patch_root_logger: bool = False,
 ) -> logging.Logger:
     """Setup and configure logging for r3a-minikit.
 
@@ -271,7 +271,7 @@ def initialize_logging(
     log_file_name: Optional[str] = None,
     file_format: Tuple[str, str] = DEFAULT_FILE_FORMAT,
     console_format: Tuple[str, str] = DEFAULT_CONSOLE_FORMAT,
-    patch_root_logger: bool = True,
+    patch_root_logger: bool = False,
 ) -> None:
     """Initialize logging with specified level.
 

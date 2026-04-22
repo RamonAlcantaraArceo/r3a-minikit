@@ -430,7 +430,7 @@ def test_initialize_logging_with_default_log_file_name(tmp_path):
 
 def test_module_logger_propagates_to_root_handlers(tmp_path):
     log_dir = tmp_path / "logs"
-    R3ALogger(log_dir, log_level="DEBUG", console_logging=False)
+    R3ALogger(log_dir, log_level="DEBUG", console_logging=False, patch_root_logger=True)
 
     module_logger = logging.getLogger("my_app.module")
     module_logger.setLevel(logging.DEBUG)
@@ -444,7 +444,7 @@ def test_module_logger_propagates_to_root_handlers(tmp_path):
 
 def test_third_party_logger_is_captured_by_root(tmp_path):
     log_dir = tmp_path / "logs"
-    R3ALogger(log_dir, log_level="INFO", console_logging=False)
+    R3ALogger(log_dir, log_level="INFO", console_logging=False, patch_root_logger=True)
 
     third_party_logger = logging.getLogger("urllib3.connectionpool")
     third_party_logger.setLevel(logging.INFO)
@@ -473,6 +473,23 @@ def test_root_patch_can_be_disabled(tmp_path):
     with open(log_file, encoding="utf-8") as f:
         content = f.read()
         assert "message should not be captured" not in content
+
+
+def test_default_patch_root_logger_is_false(tmp_path):
+    """Verify that patch_root_logger defaults to False when not specified."""
+    log_dir = tmp_path / "logs"
+    # Create R3ALogger without specifying patch_root_logger parameter
+    R3ALogger(log_dir, log_level="DEBUG", console_logging=False)
+
+    module_logger = logging.getLogger("my_app.default_no_patch")
+    module_logger.setLevel(logging.DEBUG)
+    module_logger.debug("default behavior message not captured")
+
+    log_file = log_dir / "r3a-minikit.log"
+    with open(log_file, encoding="utf-8") as f:
+        content = f.read()
+        # Module logger messages should not be captured by default
+        assert "default behavior message not captured" not in content
 
 
 def test_no_duplicate_entries_from_main_logger_with_root_patch(tmp_path):
