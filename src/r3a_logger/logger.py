@@ -157,7 +157,7 @@ class R3ALogger:
                 stream_name = getattr(stream, "name", None)
                 if stream_name is not None:
                     return ("stream", str(stream_name))
-                return ("stream", str(id(stream)))
+
             return ("stream", str(id(stream)))
 
         return ("handler", handler.__class__.__name__)
