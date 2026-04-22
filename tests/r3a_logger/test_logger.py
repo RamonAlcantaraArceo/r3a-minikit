@@ -513,7 +513,10 @@ def test_handler_identity_non_textio_stream(tmp_path):
     log_dir = tmp_path / "logs"
     instance = _R3ALogger(log_dir, log_level="INFO", patch_root_logger=False)
 
-    handler = logging.StreamHandler(io.BytesIO())
+    buffer = io.BytesIO()
+    stream = io.TextIOWrapper(buffer, encoding="utf-8")
+
+    handler = logging.StreamHandler(stream=stream)
     key = instance._handler_identity(handler)
     assert key[0] == "stream"
 
