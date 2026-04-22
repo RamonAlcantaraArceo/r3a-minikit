@@ -58,7 +58,7 @@ class R3ALogger:
             console_format: Tuple of (format_string, datefmt) for console output
             patch_root_logger: Whether to also attach handlers to the root logger
                 for compatibility with module and third-party loggers (default:
-                True).
+                False).
         """
         self.log_dir = log_dir
         self.log_level = getattr(logging, log_level.upper(), logging.INFO)
