@@ -24,9 +24,10 @@ _instance: Optional["R3ALogger"] = None
 class R3ALogger:
     """Custom logger for r3a-minikit with file and console logging.
 
-    By default, this class also patches the root logger with equivalent
-    handlers so records from module and third-party loggers are captured.
-    You can disable that behavior with patch_root_logger=False and still add
+    This class can optionally patch the root logger with equivalent handlers
+    so records from module and third-party loggers are captured. To enable
+    that behavior, set patch_root_logger=True. When left at its default of
+    False, only this logger instance is configured, which still allows
     module-specific handlers for advanced routing or filtering.
     """
 
@@ -75,7 +76,21 @@ class R3ALogger:
         # Setup logger
         self.logger = logging.getLogger(self.logger_name)
         self.logger.setLevel(self.log_level)
-        # Prevent duplicates when shared handlers are also attached to root.
+
+        # Always disable propagation, regardless of patch_root_logger.
+        #
+        # When patch_root_logger=True, this logger's handlers are copied onto
+        # the root logger. If propagation were left enabled, every record would
+        # be handled twice: once here and again via the root logger.
+        #
+        # When patch_root_logger=False, disabling propagation keeps output
+        # self-contained. It prevents records from leaking to root handlers
+        # that may be configured elsewhere (e.g., by third-party libraries or
+        # later in the application).
+        #
+        # To allow propagation in a future design, set this conditionally on
+        # patch_root_logger and ensure _patch_root_logger_handlers does not
+        # add duplicate handlers.
         self.logger.propagate = False
 
         # Clear any existing handlers
