@@ -1,0 +1,7 @@
+coverage:
+  status:
+    project:
+      default:
+        target: 95%      # aim for 95
+        threshold: 15%   # allow drop down to 80 and still pass
+        informational: false
