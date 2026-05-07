@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **Root Logger Compatibility** (`R3ALogger`): New `patch_root_logger` parameter (default `False`). When set to `True`, attaches the file and console handlers to the root logger so records from module loggers (`logging.getLogger(__name__)`) and third-party libraries are automatically captured in the log file and console output.
-- **Propagation Control**: Named logger `propagate` is set to `False` when root patching is active, preventing duplicate log entries.
+- **Propagation Control**: Named logger `propagate` is set to `False`, including when `patch_root_logger` remains at its default `False`, preventing duplicate log entries from bubbling to ancestor loggers.
 - **Level Synchronization**: Root logger level is kept at or below the named logger level; `set_level()` now updates the root level in sync.
 
 ### Changed

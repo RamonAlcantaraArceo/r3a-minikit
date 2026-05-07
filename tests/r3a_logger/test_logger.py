@@ -494,7 +494,9 @@ def test_default_patch_root_logger_is_false(tmp_path):
 
 def test_no_duplicate_entries_from_main_logger_with_root_patch(tmp_path):
     log_dir = tmp_path / "logs"
-    logger = R3ALogger(log_dir, log_level="INFO", console_logging=False).get_logger()
+    logger = R3ALogger(
+        log_dir, log_level="INFO", console_logging=False, patch_root_logger=True
+    ).get_logger()
 
     logger.info("single message")
 
